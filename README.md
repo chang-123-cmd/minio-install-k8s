@@ -1,0 +1,1 @@
+# minio-install-k8s
