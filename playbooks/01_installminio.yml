@@ -1,0 +1,14 @@
+---
+
+#---------------------------------
+# 1. RuleMark
+#---------------------------------
+- hosts:
+    - minio
+  tasks:
+    - name: "Load artifacts info"
+      action: resolve_artifacts
+
+    - include_role: name=prepare
+    - include_role: name=minioinstall
+

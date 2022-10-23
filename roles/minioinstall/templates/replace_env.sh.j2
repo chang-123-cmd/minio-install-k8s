@@ -1,0 +1,14 @@
+#!/bin/bash
+
+
+if [ `cat {{ script_path }}/url2.txt | wc -l` -le 2 ] ;
+then 
+  sed -i 's/^.*://g' {{ script_path }}/url1.txt
+  sed -i 's/{{ minio_port }}//g' {{ script_path }}/url1.txt 
+fi
+
+minio_volume=`cat {{ script_path }}/url1.txt | tr '\n' ' '`
+echo $minio_volume
+sed -i "s*minio_url*$minio_volume*" {{ minio_env_file }}
+chown -R {{ minio_user }}:{{ minio_group }} {{ minio_env_file }}
+

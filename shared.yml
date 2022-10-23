@@ -1,0 +1,71 @@
+---
+
+#---------------------------------
+# Global config
+#---------------------------------
+
+# 启动进程使用的系统用户
+minio_user: "datacanvas"
+minio_group: "datacanvas"
+service_name: "rdx-minio"
+
+# minio_opts是web的端口
+# minio_work_path 这个是工作目录
+# minio_installer_path minio程序存放的位置，就放在工作目录的bin目录下
+# minio_env_file 变量配置文件
+minio_opts: 9001
+minio_port: 9000
+minio_work_path: /opt/rdx/minio
+minio_installer_path: "{{ minio_work_path }}/bin"
+minio_env_file: "{{ minio_work_path }}/minio"
+
+
+
+
+#----------------
+# Create buckets
+#----------------
+# 上面主机中的其中一台即可，用来执行穿件桶的程序
+# 这个账号密码最好按照这个难度设置
+accessKeyID: "rtadmin"
+secretAccessKey: "rt-secret-key-CHANGE-ME"
+
+# bucketName是桶的名称,如果需要别的名称请直接修改bucketName即可
+default_hostname_rhel: "{{ inventory_hostname | replace('.','-') }}"
+bucketName: "rdx{{ inventory_hostname.split('.')[2] }}{{ inventory_hostname.split('.')[3] }}"
+
+#script_path 自定义脚本临时存放路径
+script_path: /tmp/minio
+
+
+
+
+
+
+
+#---------------------------------
+# prepare
+#---------------------------------
+
+ansible_python_interpreter: "{{ lookup('env', 'PYTHON_EXEC') | default('/usr/bin/python', true) }}"
+is_redhat_8: "{{ ansible_os_family == 'RedHat' and ansible_distribution_major_version == '8' }}"
+
+disable_firewall: true
+
+#---------------------------------
+# Ansible
+#---------------------------------
+ansible_context:
+  groups: "{{ groups }}"
+  group_names: "{{ group_names }}"
+  hostvars: "{{ hostvars }}"
+  inventory_hostname: "{{ inventory_hostname }}"
+  prefer_ip: false
+
+# same as `ansible_ssh_pass`
+ansible_become_pass: "{{ ansible_password }}"
+
+#---------------------------------
+# Component config
+#---------------------------------
+

@@ -1,0 +1,85 @@
+---
+
+- name: "Create  minio work path" 
+  file:
+    path: "{{ minio_work_path }}"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+
+- name: "Create  minio install path" 
+  file:
+    path: "{{ minio_installer_path }}"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+
+- name: "Copy minio to remote host"
+  copy: src={{ minio_package }}  dest={{ minio_installer_path }}/minio  mode=0755 owner="{{ minio_user }}"  group="{{ minio_group }}"
+
+- name: "Create  minio data path" 
+  file:
+    path: "{{ item.value }}"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+  with_dict: "{{ minio_storage_name }}"
+
+
+
+- name: "Minio configuration files"
+  template: src=../templates/minio.j2 dest={{ minio_env_file }} owner="{{ minio_user }}" group="{{ minio_group }}"
+
+- name: "create script dir"
+  file:
+    path: "{{ script_path }}"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+
+- name: "clean url file"
+  shell: "echo > {{ script_path }}/url1.txt &&  echo > {{ script_path }}/url2.txt"
+
+- name: create url1 env
+  shell: "echo  http://{{ item.key }}:{{ minio_port }}{{ item.value }} >> {{ script_path }}/url1.txt "
+  with_dict: '{{ minio_storage_name }}'
+
+- name: create url2 env
+  shell: "echo  http://{{ item }}:{{ minio_port }} >> {{ script_path }}/url2.txt "
+  with_items: "{{ groups['minio'] }}"
+
+- name: "Copy replace env script"
+  template: src=../templates/replace_env.sh.j2  dest={{ script_path }}/replace_env.sh  mode=0755
+  
+- name: replace env to config
+  shell: "/bin/bash {{ script_path }}/replace_env.sh "
+
+
+- name: "Minio service start files"
+  template: src=../templates/minio.service.j2 dest=/etc/systemd/system/{{ service_name }}.service
+
+- name: "minio service start"
+  systemd: name={{ service_name }} state=started enabled=yes daemon_reload=yes
+  when: ansible_service_mgr == "systemd"
+
+
+
+- name: "Copy script to remote host"
+  copy: src={{ mc_package }}  dest={{ minio_work_path }}/mc  mode=0755
+  when: inventory_hostname  in groups['minio'][0]
+
+- name: "Create buckets configuration files"
+  shell: "{{ minio_work_path }}/mc config host add minio http://{{ inventory_hostname }}:{{ minio_port }}  {{ accessKeyID }}  {{ secretAccessKey }}  "
+  when: inventory_hostname  in groups['minio'][0]
+
+- name: "execute script"
+  shell: "temp_env=`{{ minio_work_path }}/mc ls minio/ |grep {{ bucketName }} |wc -l` && if [ $temp_env -eq 0 ] ;then  {{ minio_work_path }}/mc mb minio/{{ bucketName }} ;fi"
+  when: inventory_hostname  in groups['minio'][0]
+
+- name: clearn tmp file
+  file:
+    path: "{{ script_path }}"
+    state: absent
+
+
+

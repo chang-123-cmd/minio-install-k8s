@@ -1,0 +1,3 @@
+- include: 02_common.yml
+- include: 03_firewall.yml
+- include: 05_adduser.yml

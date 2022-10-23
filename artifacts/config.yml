@@ -1,0 +1,7 @@
+---
+name: rdx_minio_ansible
+version: develop
+#local_dir: .
+artifacts:
+  - { group: "minio", name: "mc_package",  path_in_repo: "minio/mc-RELEASE.2022-10-06T01-20-06Z" }
+  - { group: "minio", name: "minio_package",  path_in_repo: "minio/minio-RELEASE.2022-10-05T14-58-27Z" }
